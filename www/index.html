@@ -744,14 +744,13 @@
                             <div class="stat-label">Intereses Restantes</div>
                             <div class="stat-val danger" style="font-size: 1rem;" id="det-int-left">0 €</div>
                         </div>
-                        <div class="card" style="grid-column: span 2; padding: 12px; background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div class="stat-label" style="color: #a5b4fc;">Intereses Totales Teóricos</div>
-                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Coste original pactado sin amortizar nada</div>
-                                </div>
-                                <div class="stat-val" style="font-size: 1.15rem; color: #e0e7ff;" id="det-int-theor">0 €</div>
-                            </div>
+                        <div class="card" style="padding: 12px; background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
+                            <div class="stat-label" style="color: #34d399;">Intereses Ahorrados</div>
+                            <div class="stat-val success" style="font-size: 1rem;" id="det-int-saved">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px; background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+                            <div class="stat-label" style="color: #a5b4fc;">Int. Totales Teóricos</div>
+                            <div class="stat-val" style="font-size: 1rem; color: #e0e7ff;" id="det-int-theor">0 €</div>
                         </div>
                     </div>
 
@@ -1434,10 +1433,14 @@
             // Intereses totales teóricos que costaría el crédito sin amortizar nada
             const totalTheoreticalInterest = loan.initialTotalInterest || ((loan.monthlyQuota * totalMonths) - loan.amount);
 
+            // Intereses totales ahorrados en todas las amortizaciones
+            const totalSaved = (loan.amortizations || []).reduce((acc, a) => acc + (a.savedInterest || 0), 0);
+
             document.getElementById('det-cap-paid').innerText = formatMoney(capPaid);
             document.getElementById('det-cap-left').innerText = formatMoney(capLeft);
             document.getElementById('det-int-paid').innerText = formatMoney(intPaid);
             document.getElementById('det-int-left').innerText = formatMoney(intRemaining);
+            document.getElementById('det-int-saved').innerText = formatMoney(totalSaved);
             document.getElementById('det-int-theor').innerText = formatMoney(totalTheoreticalInterest);
 
             // Rellenar acordeón histórico
@@ -1569,12 +1572,47 @@
             const loan = loans[activeLoanIndex];
             const amount = parseFloat(document.getElementById('amort-amount').value) || 0;
             const date = document.getElementById('amort-date').value || todayStr;
-            const savedInterest = parseFloat(document.getElementById('amort-int-saved').innerText.replace(/[^\d.-]/g, '')) || 0;
 
             if (amount <= 0) {
                 alert("Introduce una cantidad válida.");
                 return;
             }
+
+            // Recalcular el ahorro de forma segura (sin depender del HTML o formato local)
+            const start = new Date(loan.startDate);
+            const now = new Date();
+            let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            const totalMonths = loan.years * 12;
+            const monthsLeft = Math.max(1, totalMonths - monthsPassed);
+
+            const r = ((loan.rateFixed || 2.8) / 100) / 12;
+            let currentBal = loan.amount;
+            for(let i=0; i<monthsPassed; i++) {
+                const intM = currentBal * r;
+                const capM = loan.monthlyQuota - intM;
+                currentBal -= capM;
+            }
+            (loan.amortizations || []).forEach(a => currentBal -= a.amount);
+
+            const theoreticalInt = (loan.monthlyQuota * monthsLeft) - currentBal;
+            const newBal = Math.max(0, currentBal - amount);
+            let newInt = 0;
+
+            if (currentAmortStrategy === 'term') {
+                let tempBal = newBal;
+                while (tempBal > 0) {
+                    const intM = tempBal * r;
+                    const capM = loan.monthlyQuota - intM;
+                    if (capM <= 0) break;
+                    newInt += intM;
+                    tempBal -= capM;
+                }
+            } else {
+                const newQuota = calcQuota(newBal, r, monthsLeft);
+                newInt = (newQuota * monthsLeft) - newBal;
+            }
+            const savedInterest = Math.max(0, theoreticalInt - newInt);
+
 
             if (!loan.amortizations) loan.amortizations = [];
 
