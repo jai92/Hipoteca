@@ -588,6 +588,17 @@
                         <input type="number" id="calc-years" value="25" min="1" max="40">
                     </div>
                 </div>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Comisión Amort. Parcial (%)</label>
+                        <input type="number" id="calc-fee-partial" value="0" step="0.01" placeholder="Ej: 0.15">
+                    </div>
+                    <div class="form-group">
+                        <label>Comisión Amort. Total (%)</label>
+                        <input type="number" id="calc-fee-total" value="0" step="0.01" placeholder="Ej: 1.00">
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label>Modalidad de Tipo de Interés</label>
@@ -668,8 +679,9 @@
                         <span class="stat-val danger" style="font-size: 1.15rem;" id="res-interest">72,135 €</span>
                     </div>
                 </div>
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-outline" style="border-color: #818cf8; color: #e0e7ff;" onclick="saveCalculatedLoan()">💾 Guardar en Mis Datos</button>
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button class="btn btn-outline" style="flex: 1; border-color: #818cf8; color: #e0e7ff; font-size: 0.85rem;" onclick="saveCalculatedLoan()">💾 Mis Datos</button>
+                    <button class="btn btn-outline" style="flex: 1; border-color: #10b981; color: #a7f3d0; font-size: 0.85rem;" onclick="saveForComparison()">⚖️ Comparar</button>
                 </div>
             </div>
         </div>
@@ -890,7 +902,7 @@
             </button>
                     <button class="nav-btn" onclick="switchTab('tab-smart-amort', this)">
                 <span class="nav-icon">💡</span>
-                <span>Ideal</span>
+                <span>Amortizar</span>
             </button>
         </nav>
     </div>
@@ -901,6 +913,7 @@
         let currentAmortStrategy = 'term';
         let activeLoanIndex = null;
         let loans = [];
+        let comparisons = [];
 
         // Inicializar fecha de hoy
         const todayStr = new Date().toISOString().split('T')[0];
@@ -959,9 +972,14 @@
                     return;
                 }
 
+                const isTotal = amount >= currentBal;
                 const amortAmount = Math.min(amount, currentBal);
                 const theoreticalInt = (loan.monthlyQuota * monthsLeft) - currentBal;
                 const newBal = currentBal - amortAmount;
+                
+                // Calcular penalización / comisión por amortización
+                const feePercentage = isTotal ? (loan.feeTotal || 0) : (loan.feePartial || 0);
+                const feeAmount = amortAmount * (feePercentage / 100);
 
                 // Opción A: Reducir Plazo (Term)
                 let newIntTerm = 0;
@@ -974,12 +992,14 @@
                     newIntTerm += intM;
                     tempBal -= capM;
                 }
-                const savingsTerm = Math.max(0, theoreticalInt - newIntTerm);
+                const savingsTermGross = Math.max(0, theoreticalInt - newIntTerm);
+                const savingsTerm = Math.max(0, savingsTermGross - feeAmount);
 
                 // Opción B: Reducir Cuota
                 const newQuota = calcQuota(newBal, r, monthsLeft);
                 const newIntQuota = (newQuota * monthsLeft) - newBal;
-                const savingsQuota = Math.max(0, theoreticalInt - newIntQuota);
+                const savingsQuotaGross = Math.max(0, theoreticalInt - newIntQuota);
+                const savingsQuota = Math.max(0, savingsQuotaGross - feeAmount);
 
                 const maxSavings = Math.max(savingsTerm, savingsQuota);
                 const bestStrategy = savingsTerm >= savingsQuota ? 'Reduciendo Plazo' : 'Reduciendo Cuota';
@@ -990,7 +1010,8 @@
                     savingsTerm,
                     savingsQuota,
                     maxSavings,
-                    bestStrategy
+                    bestStrategy,
+                    feeAmount
                 });
             });
 
@@ -1014,6 +1035,7 @@
                     <div style="font-size: 1.1rem; font-weight: 700; color: #34d399; margin-bottom: 4px; margin-top: 10px;">${best.loan.name}</div>
                     <p style="font-size: 0.85rem; color: #a7f3d0; margin-bottom: 12px;">
                         Tu mejor jugada es invertir aquí <b>${best.bestStrategy}</b>.
+                        ${best.feeAmount > 0 ? `<br><span style="font-size: 0.75rem; color: #f87171;">* Descontados ${formatMoney(best.feeAmount)} de comisiones.</span>` : ''}
                     </p>
                     <div class="grid-2">
                         <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
@@ -1111,6 +1133,10 @@
 
         function saveLoansToStorage() {
             localStorage.setItem('hipotecas_loans_v2', JSON.stringify(loans));
+        }
+        
+        function saveComparisonsToStorage() {
+            localStorage.setItem('hipotecas_comparisons_v1', JSON.stringify(comparisons));
         }
 
         // CONTROL DE PESTAÑAS
@@ -1243,6 +1269,8 @@
                 years,
                 rateType: currentRateType,
                 rateFixed: parseFloat(document.getElementById('calc-interest-fixed').value) || 0,
+                feePartial: parseFloat(document.getElementById('calc-fee-partial').value) || 0,
+                feeTotal: parseFloat(document.getElementById('calc-fee-total').value) || 0,
                 monthlyQuota: res.initialMonthly,
                 totalCost: res.totalCost,
                 totalInterest: res.totalInterest,
@@ -1610,45 +1638,131 @@ Has ahorrado ${formatMoney(savedInterest)} en intereses.`);
         }
 
         // COMPARADOR
-        function renderComparison() {
+                function renderComparison() {
             const container = document.getElementById('compare-container');
             container.innerHTML = '';
 
-            if (loans.length < 2) {
-                container.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem;">Guarda al menos 2 préstamos en "Mis Datos" para poder compararlos.</p>`;
+            if (comparisons.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding: 20px;">No tienes simulaciones en el comparador. Ve a la calculadora y usa "⚖️ Comparar".</p>`;
                 return;
             }
 
-            const sorted = [...loans].sort((a,b) => a.totalInterest - b.totalInterest);
+            let html = `<div style="display:flex; justify-content:flex-end; margin-bottom: 12px;">
+                <button class="btn-sm" style="background:transparent; border:1px solid #ef4444; color:#f87171;" onclick="clearComparisons()">🗑️ Limpiar Comparador</button>
+            </div>`;
+
+            if (comparisons.length < 2) {
+                html += `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding: 10px;">Añade al menos otra simulación desde la calculadora para ver la comparativa de la mejor opción.</p>`;
+            }
+
+            const sorted = [...comparisons].sort((a,b) => a.totalInterest - b.totalInterest);
             const best = sorted[0];
 
-            let html = `
-                <div class="card" style="background:rgba(16, 185, 129, 0.1); border-color:#10b981;">
-                    <div style="font-weight:700; color:#34d399;">🏆 Opción más económica: ${best.name}</div>
-                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
-                        Es la alternativa que menos intereses genera a lo largo de toda la vida del préstamo (${formatMoney(best.totalInterest)}).
+            if (comparisons.length >= 2) {
+                html += `
+                    <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1)); border: 1px solid #10b981; margin-bottom: 16px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; right: 0; background: #10b981; color: white; padding: 4px 12px; font-size: 0.7rem; font-weight: 700; border-bottom-left-radius: 12px;">🏆 MEJOR OPCIÓN</div>
+                        <div style="font-weight:700; color:#34d399; font-size: 1.1rem; margin-top: 10px; margin-bottom: 4px;">${best.name}</div>
+                        <div style="font-size:0.8rem; color:#a7f3d0;">
+                            Es la alternativa ideal porque te ahorra dinero: es la que menos intereses totales genera a lo largo del préstamo (${formatMoney(best.totalInterest)}).
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
 
             sorted.forEach((l, i) => {
                 const diff = l.totalInterest - best.totalInterest;
+                const totalPagos = l.years * 12;
+                
                 html += `
-                    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:600;">#${i+1} ${l.name}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">Cuota: ${formatMoney(l.monthlyQuota)} | Capital: ${formatMoney(l.amount)}</div>
+                    <div class="card" style="display:flex; flex-direction:column; gap: 8px; margin-bottom: 10px; border-left: 4px solid ${diff === 0 && comparisons.length >= 2 ? '#10b981' : '#818cf8'};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="font-weight:600; font-size:1rem; color:#e0e7ff;">#${i+1} ${l.name}</div>
+                            <button onclick="deleteComparison(${l.id})" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-weight:700; color:#f87171;">${formatMoney(l.totalInterest)}</div>
-                            ${diff > 0 ? `<div style="font-size:0.7rem; color:#f87171;">+${formatMoney(diff)} vs mejor</div>` : '<div style="font-size:0.7rem; color:#34d399;">Mejor opción</div>'}
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.8rem; color:var(--text-muted); gap:6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px;">
+                            <div>
+                                <div style="font-size:0.7rem;">Capital Total</div>
+                                <div style="color:#fff; font-weight:500;">${formatMoney(l.amount)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Nº de Pagos</div>
+                                <div style="color:#fff; font-weight:500;">${totalPagos} meses</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Cuota Mensual</div>
+                                <div style="color:#fff; font-weight:500;">${formatMoney(l.monthlyQuota)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Intereses a Pagar</div>
+                                <div style="color:#f87171; font-weight:600;">${formatMoney(l.totalInterest)}</div>
+                            </div>
                         </div>
+                        
+                        ${comparisons.length >= 2 ? 
+                            (diff > 0 
+                                ? `<div style="font-size:0.75rem; color:#f87171; font-weight: 500;">⚠️ Te cuesta +${formatMoney(diff)} en intereses comparado con la mejor opción.</div>` 
+                                : `<div style="font-size:0.75rem; color:#34d399; font-weight: 600;">✨ ¡Esta es tu opción más barata!</div>`
+                            ) 
+                            : ''
+                        }
                     </div>
                 `;
             });
 
             container.innerHTML = html;
         }
+
+        function clearComparisons() {
+            comparisons = [];
+            saveComparisonsToStorage();
+            renderComparison();
+        }
+
+        function deleteComparison(id) {
+            comparisons = comparisons.filter(c => c.id !== id);
+            saveComparisonsToStorage();
+            renderComparison();
+        }
+
+        function saveForComparison() {
+            const name = document.getElementById('calc-name').value || 'Mi Préstamo';
+            const date = document.getElementById('calc-date').value || todayStr;
+            const product = document.getElementById('calc-product').value;
+            const amount = parseFloat(document.getElementById('calc-amount').value) || 0;
+            const years = parseFloat(document.getElementById('calc-years').value) || 1;
+
+            const res = calculateMortgage();
+
+            const newComp = {
+                id: Date.now(),
+                name,
+                startDate: date,
+                product,
+                amount,
+                years,
+                rateType: currentRateType,
+                rateFixed: parseFloat(document.getElementById('calc-interest-fixed').value) || 0,
+                feePartial: parseFloat(document.getElementById('calc-fee-partial').value) || 0,
+                feeTotal: parseFloat(document.getElementById('calc-fee-total').value) || 0,
+                monthlyQuota: res.initialMonthly,
+                totalCost: res.totalCost,
+                totalInterest: res.totalInterest,
+                initialTotalInterest: res.totalInterest,
+                amortizations: []
+            };
+
+            comparisons.push(newComp);
+            saveComparisonsToStorage();
+            
+            // Animación de éxito o aviso
+            alert("⚖️ Añadido al Comparador con éxito.");
+            
+            // Si el usuario quiere ver el comparador, cambiamos de pestaña:
+            switchTab('tab-compare', document.querySelectorAll('.nav-btn')[2]);
+        }
+
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('open');

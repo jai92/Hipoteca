@@ -8,5 +8,4 @@ INSTRUCCIONES PARA GENERAR EL APK EN GITHUB:
    - capacitor.config.json
    - .github/workflows/build-apk.yml
 4. Ve a la pestaña "Actions" en GitHub: verás que se inicia la tarea "Compilar APK Android" de forma automática.
-5. Tras unos 3-4 minutos, cuando aparezca el icono verde (check), entra en la ejecución y en la sección "Artifacts" descarga "Hipoteca-App-APK".
-6. Descomprime ese archivo descargado y obtendrás el archivo app-debug.apk listo para instalar en tu móvil Android.
+5. Tras unos 3-4 minutos, cuando aparezca el check verde, entra en la ejecución y descarga el APK.
