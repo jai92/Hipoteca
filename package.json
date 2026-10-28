@@ -1,0 +1,14 @@
+{
+  "name": "com.hipotecas.app",
+  "version": "1.0.0",
+  "description": "Calculadora de Hipotecas y Créditos Pro",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No extra build step needed'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}

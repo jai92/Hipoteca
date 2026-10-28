@@ -1,0 +1,6 @@
+{
+  "appId": "com.hipotecas.app",
+  "appName": "Calculadora Hipotecas",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
