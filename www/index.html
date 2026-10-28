@@ -517,7 +517,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
-            width: 33.3%;
+            width: 25%;
             padding: 8px 0;
         }
 
@@ -714,8 +714,8 @@
                         </div>
                     </div>
 
-                    <!-- 4 Tarjetas Métricas Clave -->
-                    <div class="grid-4">
+                    <!-- Tarjetas Métricas Clave -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <div class="card" style="padding: 12px;">
                             <div class="stat-label">Capital Pagado</div>
                             <div class="stat-val success" style="font-size: 1rem;" id="det-cap-paid">0 €</div>
@@ -731,6 +731,15 @@
                         <div class="card" style="padding: 12px;">
                             <div class="stat-label">Intereses Restantes</div>
                             <div class="stat-val danger" style="font-size: 1rem;" id="det-int-left">0 €</div>
+                        </div>
+                        <div class="card" style="grid-column: span 2; padding: 12px; background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="stat-label" style="color: #a5b4fc;">Intereses Totales Teóricos</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Coste original pactado sin amortizar nada</div>
+                                </div>
+                                <div class="stat-val" style="font-size: 1.15rem; color: #e0e7ff;" id="det-int-theor">0 €</div>
+                            </div>
                         </div>
                     </div>
 
@@ -848,7 +857,24 @@
             </div>
         </div>
 
-        <!-- BARRA INFERIOR DE 3 BOTONES -->
+                <!-- PESTAÑA 4: SIMULADOR INTELIGENTE (¡QUIERO AMORTIZAR!) -->
+        <div id="tab-smart-amort" class="tab-content">
+            <div class="card" style="border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+                <div class="card-title" style="color: #34d399;">💡 ¡Quiero Amortizar!</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    Introduce el dinero extra que tienes ahorrado. Analizaremos todos tus préstamos para decirte <b>dónde te conviene más</b> meter ese dinero para ahorrar la mayor cantidad de intereses.
+                </p>
+                <div class="form-group">
+                    <label>Dinero extra a amortizar (€)</label>
+                    <input type="number" id="smart-amort-amount" placeholder="Ej: 5000" step="500">
+                </div>
+                <button class="btn btn-success" onclick="analyzeSmartAmortization()">🔍 Analizar Mejor Opción</button>
+            </div>
+            
+            <div id="smart-amort-results" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;"></div>
+        </div>
+
+        <!-- BARRA INFERIOR DE 4 BOTONES -->
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="switchTab('tab-calculator', this)">
                 <span class="nav-icon">🧮</span>
@@ -861,6 +887,10 @@
             <button class="nav-btn" onclick="switchTab('tab-compare', this)">
                 <span class="nav-icon">⚖️</span>
                 <span>Comparador</span>
+            </button>
+                    <button class="nav-btn" onclick="switchTab('tab-smart-amort', this)">
+                <span class="nav-icon">💡</span>
+                <span>Ideal</span>
             </button>
         </nav>
     </div>
@@ -877,7 +907,164 @@
         document.getElementById('calc-date').value = todayStr;
         document.getElementById('amort-date').value = todayStr;
 
-        // Cargar préstamos de prueba o del almacenamiento local
+                // SIMULADOR INTELIGENTE
+        function analyzeSmartAmortization() {
+            const amount = parseFloat(document.getElementById('smart-amort-amount').value) || 0;
+            const container = document.getElementById('smart-amort-results');
+            container.innerHTML = '';
+
+            if (loans.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><p style="color:var(--text-muted)">No tienes préstamos guardados para analizar.</p></div>`;
+                return;
+            }
+            if (amount <= 0) {
+                alert("Por favor, introduce una cantidad mayor a 0.");
+                return;
+            }
+
+            let analysis = [];
+
+            loans.forEach(loan => {
+                // Validación: cantidad mayor a la cuota
+                if (amount < loan.monthlyQuota) {
+                    analysis.push({
+                        loan,
+                        skipped: true,
+                        reason: `El importe es menor a la cuota mensual (${formatMoney(loan.monthlyQuota)}).`
+                    });
+                    return;
+                }
+
+                const start = new Date(loan.startDate);
+                const now = new Date();
+                let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+                if (monthsPassed < 0) monthsPassed = 0;
+                
+                const totalMonths = loan.years * 12;
+                const monthsLeft = Math.max(1, totalMonths - monthsPassed);
+                const r = ((loan.rateFixed || 2.8) / 100) / 12;
+
+                // Calcular saldo actual
+                let currentBal = loan.amount;
+                for(let i=0; i<monthsPassed; i++) {
+                    const intM = currentBal * r;
+                    const capM = loan.monthlyQuota - intM;
+                    currentBal -= capM;
+                }
+                (loan.amortizations || []).forEach(a => currentBal -= a.amount);
+                currentBal = Math.max(0, currentBal);
+
+                if (currentBal <= 0) {
+                    analysis.push({ loan, skipped: true, reason: 'Préstamo ya liquidado.' });
+                    return;
+                }
+
+                const amortAmount = Math.min(amount, currentBal);
+                const theoreticalInt = (loan.monthlyQuota * monthsLeft) - currentBal;
+                const newBal = currentBal - amortAmount;
+
+                // Opción A: Reducir Plazo (Term)
+                let newIntTerm = 0;
+                let tempBal = newBal;
+                while (tempBal > 0) {
+                    const intM = tempBal * r;
+                    let capM = loan.monthlyQuota - intM;
+                    if (capM <= 0) break;
+                    if (capM > tempBal) capM = tempBal;
+                    newIntTerm += intM;
+                    tempBal -= capM;
+                }
+                const savingsTerm = Math.max(0, theoreticalInt - newIntTerm);
+
+                // Opción B: Reducir Cuota
+                const newQuota = calcQuota(newBal, r, monthsLeft);
+                const newIntQuota = (newQuota * monthsLeft) - newBal;
+                const savingsQuota = Math.max(0, theoreticalInt - newIntQuota);
+
+                const maxSavings = Math.max(savingsTerm, savingsQuota);
+                const bestStrategy = savingsTerm >= savingsQuota ? 'Reduciendo Plazo' : 'Reduciendo Cuota';
+
+                analysis.push({
+                    loan,
+                    skipped: false,
+                    savingsTerm,
+                    savingsQuota,
+                    maxSavings,
+                    bestStrategy
+                });
+            });
+
+            // Separar válidos de inválidos y ordenar por mayor ahorro
+            const valid = analysis.filter(a => !a.skipped).sort((a,b) => b.maxSavings - a.maxSavings);
+            const invalid = analysis.filter(a => a.skipped);
+
+            if (valid.length === 0) {
+                container.innerHTML = invalid.map(inv => `<div class="card" style="border-left: 4px solid #f59e0b;"><div style="font-weight:600;">${inv.loan.name}</div><div style="font-size:0.8rem; color:var(--text-muted);">${inv.reason}</div></div>`).join('');
+                return;
+            }
+
+            // Renderizar resultados
+            let html = '';
+            
+            // Mejor opción
+            const best = valid[0];
+            html += `
+                <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1)); border: 1px solid #10b981; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; right: 0; background: #10b981; color: white; padding: 4px 12px; font-size: 0.7rem; font-weight: 700; border-bottom-left-radius: 12px;">🏆 MEJOR OPCIÓN</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #34d399; margin-bottom: 4px; margin-top: 10px;">${best.loan.name}</div>
+                    <p style="font-size: 0.85rem; color: #a7f3d0; margin-bottom: 12px;">
+                        Tu mejor jugada es invertir aquí <b>${best.bestStrategy}</b>.
+                    </p>
+                    <div class="grid-2">
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
+                            <div style="font-size: 0.7rem; color: #a7f3d0;">Ahorro Reduciendo Plazo</div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: ${best.bestStrategy === 'Reduciendo Plazo' ? '#34d399' : '#fff'};">${formatMoney(best.savingsTerm)}</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
+                            <div style="font-size: 0.7rem; color: #a7f3d0;">Ahorro Reduciendo Cuota</div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: ${best.bestStrategy === 'Reduciendo Cuota' ? '#34d399' : '#fff'};">${formatMoney(best.savingsQuota)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Otras opciones
+            if (valid.length > 1) {
+                html += `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; margin-bottom: -4px;">Otras alternativas de menor a mayor coste:</div>`;
+                for (let i = 1; i < valid.length; i++) {
+                    const opt = valid[i];
+                    html += `
+                        <div class="card" style="border-left: 4px solid #818cf8;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">#${i+1} ${opt.loan.name}</div>
+                            <div class="grid-2">
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Reduciendo Plazo</div>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${formatMoney(opt.savingsTerm)}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Reduciendo Cuota</div>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${formatMoney(opt.savingsQuota)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Excluidos
+            if (invalid.length > 0) {
+                invalid.forEach(inv => {
+                    html += `<div class="card" style="border-left: 4px solid #f59e0b; opacity: 0.8;">
+                        <div style="font-weight:600; font-size:0.9rem;">${inv.loan.name}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${inv.reason}</div>
+                    </div>`;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Cargar préstamos de prueba... o del almacenamiento local
         function initApp() {
             const saved = localStorage.getItem('hipotecas_loans_v2');
             if (saved) {
@@ -1059,6 +1246,7 @@
                 monthlyQuota: res.initialMonthly,
                 totalCost: res.totalCost,
                 totalInterest: res.totalInterest,
+                initialTotalInterest: res.totalInterest,
                 amortizations: []
             };
 
@@ -1211,12 +1399,18 @@
             });
 
             const capLeft = Math.max(0, loan.amount - capPaid);
-            const intLeft = Math.max(0, loan.totalInterest - intPaid);
+            
+            // Suma de intereses que quedan por pagar de todas las cuotas futuras
+            const intRemaining = futureList.reduce((acc, f) => acc + (f.interest || 0), 0);
+
+            // Intereses totales teóricos que costaría el crédito sin amortizar nada
+            const totalTheoreticalInterest = loan.initialTotalInterest || ((loan.monthlyQuota * totalMonths) - loan.amount);
 
             document.getElementById('det-cap-paid').innerText = formatMoney(capPaid);
             document.getElementById('det-cap-left').innerText = formatMoney(capLeft);
             document.getElementById('det-int-paid').innerText = formatMoney(intPaid);
-            document.getElementById('det-int-left').innerText = formatMoney(intLeft);
+            document.getElementById('det-int-left').innerText = formatMoney(intRemaining);
+            document.getElementById('det-int-theor').innerText = formatMoney(totalTheoreticalInterest);
 
             // Rellenar acordeón histórico
             document.getElementById('acc-hist-count').innerText = historyList.length;
