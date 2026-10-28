@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora Hipotecas y Créditos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-light: #6366f1;
+            --primary-dark: #312e81;
+            --secondary: #0ea5e9;
+            --bg-color: #0b0f19;
+            --surface-color: #111827;
+            --surface-card: #1f2937;
+            --surface-hover: #374151;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --accent-danger: #ef4444;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            background-color: var(--surface-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding-bottom: 75px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            font-size: 0.8rem;
+            color: #c7d2fe;
+            margin-top: 4px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #e0e7ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input, select {
+            background-color: #111827;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .segmented-control {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+            background-color: #111827;
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
+
+        .segmented-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .segmented-btn.active {
+            background-color: var(--primary);
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background-color: var(--surface-hover);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .result-highlight-card {
+            background: linear-gradient(135deg, #1e1b4b, #2e1065);
+            border: 1px solid #4338ca;
+            border-radius: 16px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-highlight-card::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #a5b4fc;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .stat-val.danger {
+            color: #f87171;
+        }
+
+        .stat-val.success {
+            color: #34d399;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 14px 0;
+        }
+
+        /* Mis Datos */
+        .loan-item-card {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        .loan-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .loan-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-hipoteca {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+        }
+
+        .badge-credito {
+            background: rgba(14, 165, 233, 0.2);
+            color: #7dd3fc;
+            border: 1px solid rgba(14, 165, 233, 0.4);
+        }
+
+        .savings-tag {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .btn-sm {
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--surface-color);
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            border-radius: 24px 24px 0 0;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.25s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Acordeones */
+        .accordion {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.02);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            background-color: #0d121f;
+        }
+
+        .accordion.open .accordion-content {
+            display: block;
+        }
+
+        .accordion-arrow {
+            transition: transform 0.2s;
+        }
+
+        .accordion.open .accordion-arrow {
+            transform: rotate(180deg);
+        }
+
+        .receipt-row {
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #161e2e;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.8rem;
+            border-left: 3px solid var(--primary-light);
+        }
+
+        .receipt-row.amortization {
+            border-left: 3px solid var(--accent-success);
+            background-color: rgba(16, 185, 129, 0.08);
+        }
+
+        .receipt-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        .receipt-details {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            height: 65px;
+            background-color: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 25%;
+            padding: 8px 0;
+        }
+
+        .nav-btn.active {
+            color: #818cf8;
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #1f2937;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 6px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-success));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Hipotecas & Créditos Pro</h1>
+            <p>Calculadora, Amortizaciones y Seguimiento</p>
+        </header>
+
+        <!-- PESTAÑA 1: CALCULADORA -->
+        <div id="tab-calculator" class="tab-content active">
+            <div class="card">
+                <div class="card-title">📝 Datos del Préstamo</div>
+                
+                <div class="form-group">
+                    <label>Nombre o Concepto</label>
+                    <input type="text" id="calc-name" value="Mi Vivienda Principal" placeholder="Ej: Hipoteca Casa, Coche...">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Fecha de Inicio</label>
+                        <input type="date" id="calc-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Producto</label>
+                        <select id="calc-product">
+                            <option value="hipoteca">Hipoteca</option>
+                            <option value="credito">Crédito Personal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Importe Solicitado (€)</label>
+                        <input type="number" id="calc-amount" value="180000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Plazo (Años)</label>
+                        <input type="number" id="calc-years" value="25" min="1" max="40">
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Comisión Amort. Parcial (%)</label>
+                        <input type="number" id="calc-fee-partial" value="0" step="0.01" placeholder="Ej: 0.15">
+                    </div>
+                    <div class="form-group">
+                        <label>Comisión Amort. Total (%)</label>
+                        <input type="number" id="calc-fee-total" value="0" step="0.01" placeholder="Ej: 1.00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Modalidad de Tipo de Interés</label>
+                    <div class="segmented-control" id="rate-type-control">
+                        <button class="segmented-btn active" onclick="setRateType('fija')">Fija</button>
+                        <button class="segmented-btn" onclick="setRateType('mixta')">Mixta</button>
+                        <button class="segmented-btn" onclick="setRateType('variable')">Variable</button>
+                    </div>
+                </div>
+
+                <!-- Campos Específicos Fija -->
+                <div id="fields-fixed" class="form-group">
+                    <label>Interés Nominal Anual (%)</label>
+                    <input type="number" id="calc-interest-fixed" value="2.85" step="0.01">
+                </div>
+
+                <!-- Campos Específicos Mixta -->
+                <div id="fields-mixed" style="display: none; flex-direction: column; gap: 12px;">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Años Fijo Inicial</label>
+                            <input type="number" id="calc-mixed-fixed-years" value="5" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Interés Fijo (%)</label>
+                            <input type="number" id="calc-mixed-fixed-rate" value="2.50" step="0.01">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Diferencial (%)</label>
+                            <input type="number" id="calc-mixed-diff" value="0.75" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Euríbor Estimado (%)</label>
+                            <input type="number" id="calc-mixed-euribor" value="2.50" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campos Específicos Variable -->
+                <div id="fields-variable" style="display: none; flex-direction: column; gap: 12px;">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Interés 1er Año (%)</label>
+                            <input type="number" id="calc-var-year1" value="2.10" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Diferencial (%)</label>
+                            <input type="number" id="calc-var-diff" value="0.70" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Euríbor Estimado Resto (%)</label>
+                        <input type="number" id="calc-var-euribor" value="2.60" step="0.01">
+                    </div>
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <button class="btn" onclick="calculateMortgage()">🧮 Calcular Resultados</button>
+                </div>
+            </div>
+
+            <!-- RESULTADOS -->
+            <div class="result-highlight-card" id="calc-results">
+                <div class="stat-box" style="margin-bottom: 12px;">
+                    <span class="stat-label">Cuota Mensual Estimada</span>
+                    <span class="stat-val" id="res-monthly">840.45 €/mes</span>
+                </div>
+                <div class="divider"></div>
+                <div class="grid-2">
+                    <div class="stat-box">
+                        <span class="stat-label">Total a Pagar</span>
+                        <span class="stat-val" style="font-size: 1.15rem;" id="res-total">252,135 €</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Intereses Totales</span>
+                        <span class="stat-val danger" style="font-size: 1.15rem;" id="res-interest">72,135 €</span>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; display: flex; gap: 8px;">
+                    <button class="btn btn-outline" style="flex: 1; border-color: #818cf8; color: #e0e7ff; font-size: 0.85rem;" onclick="saveCalculatedLoan()">💾 Mis Datos</button>
+                    <button class="btn btn-outline" style="flex: 1; border-color: #10b981; color: #a7f3d0; font-size: 0.85rem;" onclick="saveForComparison()">⚖️ Comparar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: MIS DATOS -->
+        <div id="tab-data" class="tab-content">
+            <div id="loans-container" style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Tarjetas dinámicas -->
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: COMPARADOR -->
+        <div id="tab-compare" class="tab-content">
+            <div class="card">
+                <div class="card-title">⚖️ Comparativa de Préstamos</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    Compara el coste financiero real entre las hipotecas o créditos que tienes guardados en tu dispositivo.
+                </p>
+                <div id="compare-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- MODAL: PROGRESO Y CUOTAS (HISTÓRICO Y FUTURO) -->
+        <div class="modal" id="modal-details">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title" id="det-title">Detalle del Préstamo</div>
+                    <button class="modal-close" onclick="closeModal('modal-details')">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+                            <span id="det-start-date">Inicio: 01/01/2023</span>
+                            <span id="det-end-date">Fin: 01/01/2048</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="det-progress" style="width: 15%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #a5b4fc; font-weight: 600;">
+                            <span id="det-months-passed">Mes 14 transcurrido</span>
+                            <span id="det-months-left">286 meses restantes</span>
+                        </div>
+                    </div>
+
+                    <!-- Tarjetas Métricas Clave -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="card" style="padding: 12px;">
+                            <div class="stat-label">Capital Pagado</div>
+                            <div class="stat-val success" style="font-size: 1rem;" id="det-cap-paid">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px;">
+                            <div class="stat-label">Capital Pendiente</div>
+                            <div class="stat-val" style="font-size: 1rem;" id="det-cap-left">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px;">
+                            <div class="stat-label">Intereses Pagados</div>
+                            <div class="stat-val danger" style="font-size: 1rem;" id="det-int-paid">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px;">
+                            <div class="stat-label">Intereses Restantes</div>
+                            <div class="stat-val danger" style="font-size: 1rem;" id="det-int-left">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px; background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
+                            <div class="stat-label" style="color: #34d399;">Intereses Ahorrados</div>
+                            <div class="stat-val success" style="font-size: 1rem;" id="det-int-saved">0 €</div>
+                        </div>
+                        <div class="card" style="padding: 12px; background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.3);">
+                            <div class="stat-label" style="color: #a5b4fc;">Int. Totales Teóricos</div>
+                            <div class="stat-val" style="font-size: 1rem; color: #e0e7ff;" id="det-int-theor">0 €</div>
+                        </div>
+                    </div>
+
+                    <!-- Desplegable 1: Histórico Meses Pagados y Amortizaciones -->
+                    <div class="accordion" id="acc-history">
+                        <div class="accordion-header" onclick="toggleAccordion('acc-history')">
+                            <span>📜 Histórico de Pagos y Amortizaciones (<span id="acc-hist-count">0</span>)</span>
+                            <span class="accordion-arrow">▼</span>
+                        </div>
+                        <div class="accordion-content" id="det-history-list"></div>
+                    </div>
+
+                    <!-- Desplegable 2: Cuotas Pendientes -->
+                    <div class="accordion" id="acc-future">
+                        <div class="accordion-header" onclick="toggleAccordion('acc-future')">
+                            <span>⏳ Cuotas Pendientes por Pagar (<span id="acc-future-count">0</span>)</span>
+                            <span class="accordion-arrow">▼</span>
+                        </div>
+                        <div class="accordion-content" id="det-future-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: AMORTIZAR CAPITAL -->
+        <div class="modal" id="modal-amortize">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">💸 Amortizar Capital</div>
+                    <button class="modal-close" onclick="closeModal('modal-amortize')">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+                        <div style="font-size: 0.8rem; color: #a7f3d0; margin-bottom: 4px;">Capital Pendiente Actual:</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #34d399;" id="amort-current-capital">0 €</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Importe a Amortizar (€)</label>
+                        <input type="number" id="amort-amount" value="5000" step="500" oninput="previewAmortization()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha de la Amortización</label>
+                        <input type="date" id="amort-date">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estrategia</label>
+                        <div class="segmented-control">
+                            <button class="segmented-btn active" id="btn-strat-term" onclick="setAmortStrategy('term')">Reducir Plazo</button>
+                            <button class="segmented-btn" id="btn-strat-quota" onclick="setAmortStrategy('quota')">Reducir Cuota</button>
+                        </div>
+                    </div>
+
+                    <!-- Tarjetas de Impacto -->
+                    <div class="card" style="background: #111827;">
+                        <div class="stat-box" style="margin-bottom: 10px;">
+                            <span class="stat-label">Intereses Teóricos Restantes</span>
+                            <span class="stat-val" style="font-size: 1.1rem; color: #9ca3af;" id="amort-int-old">0 €</span>
+                        </div>
+                        <div class="stat-box" style="margin-bottom: 10px;">
+                            <span class="stat-label">Nuevos Intereses tras Amortizar</span>
+                            <span class="stat-val" style="font-size: 1.1rem; color: #e0e7ff;" id="amort-int-new">0 €</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="stat-box">
+                            <span class="stat-label" style="color: #34d399; font-weight: 700;">💸 Intereses Totales Ahorrados</span>
+                            <span class="stat-val success" id="amort-int-saved">0 €</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success" onclick="applyAmortization()">✅ Confirmar y Aplicar al Préstamo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: EDITAR PRÉSTAMO -->
+        <div class="modal" id="modal-edit">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">✏️ Editar Préstamo</div>
+                    <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre del Préstamo</label>
+                        <input type="text" id="edit-name">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Fecha Inicio</label>
+                            <input type="date" id="edit-date">
+                        </div>
+                        <div class="form-group">
+                            <label>Producto</label>
+                            <select id="edit-product">
+                                <option value="hipoteca">Hipoteca</option>
+                                <option value="credito">Crédito</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Capital (€)</label>
+                            <input type="number" id="edit-amount">
+                        </div>
+                        <div class="form-group">
+                            <label>Plazo (Años)</label>
+                            <input type="number" id="edit-years">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="saveEditedLoan()">💾 Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+
+                <!-- PESTAÑA 4: SIMULADOR INTELIGENTE (¡QUIERO AMORTIZAR!) -->
+        <div id="tab-smart-amort" class="tab-content">
+            <div class="card" style="border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+                <div class="card-title" style="color: #34d399;">💡 ¡Quiero Amortizar!</div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    Introduce el dinero extra que tienes ahorrado. Analizaremos todos tus préstamos para decirte <b>dónde te conviene más</b> meter ese dinero para ahorrar la mayor cantidad de intereses.
+                </p>
+                <div class="form-group">
+                    <label>Dinero extra a amortizar (€)</label>
+                    <input type="number" id="smart-amort-amount" placeholder="Ej: 5000" step="500">
+                </div>
+                <button class="btn btn-success" onclick="analyzeSmartAmortization()">🔍 Analizar Mejor Opción</button>
+            </div>
+            
+            <div id="smart-amort-results" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;"></div>
+        </div>
+
+        <!-- BARRA INFERIOR DE 4 BOTONES -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="switchTab('tab-calculator', this)">
+                <span class="nav-icon">🧮</span>
+                <span>Calculadora</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('tab-data', this)">
+                <span class="nav-icon">📋</span>
+                <span>Mis Datos</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('tab-compare', this)">
+                <span class="nav-icon">⚖️</span>
+                <span>Comparador</span>
+            </button>
+                    <button class="nav-btn" onclick="switchTab('tab-smart-amort', this)">
+                <span class="nav-icon">💡</span>
+                <span>Amortizar</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // ESTADO GLOBAL
+        let currentRateType = 'fija';
+        let currentAmortStrategy = 'term';
+        let activeLoanIndex = null;
+        let loans = [];
+        let comparisons = [];
+
+        // Inicializar fecha de hoy
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('calc-date').value = todayStr;
+        document.getElementById('amort-date').value = todayStr;
+
+                // SIMULADOR INTELIGENTE
+        function analyzeSmartAmortization() {
+            const amount = parseFloat(document.getElementById('smart-amort-amount').value) || 0;
+            const container = document.getElementById('smart-amort-results');
+            container.innerHTML = '';
+
+            if (loans.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center;"><p style="color:var(--text-muted)">No tienes préstamos guardados para analizar.</p></div>`;
+                return;
+            }
+            if (amount <= 0) {
+                alert("Por favor, introduce una cantidad mayor a 0.");
+                return;
+            }
+
+            let analysis = [];
+
+            loans.forEach(loan => {
+                // Validación: cantidad mayor a la cuota
+                if (amount < loan.monthlyQuota) {
+                    analysis.push({
+                        loan,
+                        skipped: true,
+                        reason: `El importe es menor a la cuota mensual (${formatMoney(loan.monthlyQuota)}).`
+                    });
+                    return;
+                }
+
+                const start = new Date(loan.startDate);
+                const now = new Date();
+                let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+                if (monthsPassed < 0) monthsPassed = 0;
+                
+                const totalMonths = loan.years * 12;
+                const monthsLeft = Math.max(1, totalMonths - monthsPassed);
+                const r = ((loan.rateFixed || 2.8) / 100) / 12;
+
+                // Calcular saldo actual
+                let currentBal = loan.amount;
+                for(let i=0; i<monthsPassed; i++) {
+                    const intM = currentBal * r;
+                    const capM = loan.monthlyQuota - intM;
+                    currentBal -= capM;
+                }
+                (loan.amortizations || []).forEach(a => currentBal -= a.amount);
+                currentBal = Math.max(0, currentBal);
+
+                if (currentBal <= 0) {
+                    analysis.push({ loan, skipped: true, reason: 'Préstamo ya liquidado.' });
+                    return;
+                }
+
+                const isTotal = amount >= currentBal;
+                const amortAmount = Math.min(amount, currentBal);
+                const theoreticalInt = (loan.monthlyQuota * monthsLeft) - currentBal;
+                const newBal = currentBal - amortAmount;
+                
+                // Calcular penalización / comisión por amortización
+                const feePercentage = isTotal ? (loan.feeTotal || 0) : (loan.feePartial || 0);
+                const feeAmount = amortAmount * (feePercentage / 100);
+
+                // Opción A: Reducir Plazo (Term)
+                let newIntTerm = 0;
+                let tempBal = newBal;
+                while (tempBal > 0) {
+                    const intM = tempBal * r;
+                    let capM = loan.monthlyQuota - intM;
+                    if (capM <= 0) break;
+                    if (capM > tempBal) capM = tempBal;
+                    newIntTerm += intM;
+                    tempBal -= capM;
+                }
+                const savingsTermGross = Math.max(0, theoreticalInt - newIntTerm);
+                const savingsTerm = Math.max(0, savingsTermGross - feeAmount);
+
+                // Opción B: Reducir Cuota
+                const newQuota = calcQuota(newBal, r, monthsLeft);
+                const newIntQuota = (newQuota * monthsLeft) - newBal;
+                const savingsQuotaGross = Math.max(0, theoreticalInt - newIntQuota);
+                const savingsQuota = Math.max(0, savingsQuotaGross - feeAmount);
+
+                const maxSavings = Math.max(savingsTerm, savingsQuota);
+                const bestStrategy = savingsTerm >= savingsQuota ? 'Reduciendo Plazo' : 'Reduciendo Cuota';
+
+                analysis.push({
+                    loan,
+                    skipped: false,
+                    savingsTerm,
+                    savingsQuota,
+                    maxSavings,
+                    bestStrategy,
+                    feeAmount
+                });
+            });
+
+            // Separar válidos de inválidos y ordenar por mayor ahorro
+            const valid = analysis.filter(a => !a.skipped).sort((a,b) => b.maxSavings - a.maxSavings);
+            const invalid = analysis.filter(a => a.skipped);
+
+            if (valid.length === 0) {
+                container.innerHTML = invalid.map(inv => `<div class="card" style="border-left: 4px solid #f59e0b;"><div style="font-weight:600;">${inv.loan.name}</div><div style="font-size:0.8rem; color:var(--text-muted);">${inv.reason}</div></div>`).join('');
+                return;
+            }
+
+            // Renderizar resultados
+            let html = '';
+            
+            // Mejor opción
+            const best = valid[0];
+            html += `
+                <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1)); border: 1px solid #10b981; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; right: 0; background: #10b981; color: white; padding: 4px 12px; font-size: 0.7rem; font-weight: 700; border-bottom-left-radius: 12px;">🏆 MEJOR OPCIÓN</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #34d399; margin-bottom: 4px; margin-top: 10px;">${best.loan.name}</div>
+                    <p style="font-size: 0.85rem; color: #a7f3d0; margin-bottom: 12px;">
+                        Tu mejor jugada es invertir aquí <b>${best.bestStrategy}</b>.
+                        ${best.feeAmount > 0 ? `<br><span style="font-size: 0.75rem; color: #f87171;">* Descontados ${formatMoney(best.feeAmount)} de comisiones.</span>` : ''}
+                    </p>
+                    <div class="grid-2">
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
+                            <div style="font-size: 0.7rem; color: #a7f3d0;">Ahorro Reduciendo Plazo</div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: ${best.bestStrategy === 'Reduciendo Plazo' ? '#34d399' : '#fff'};">${formatMoney(best.savingsTerm)}</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;">
+                            <div style="font-size: 0.7rem; color: #a7f3d0;">Ahorro Reduciendo Cuota</div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: ${best.bestStrategy === 'Reduciendo Cuota' ? '#34d399' : '#fff'};">${formatMoney(best.savingsQuota)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Otras opciones
+            if (valid.length > 1) {
+                html += `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; margin-bottom: -4px;">Otras alternativas de menor a mayor coste:</div>`;
+                for (let i = 1; i < valid.length; i++) {
+                    const opt = valid[i];
+                    html += `
+                        <div class="card" style="border-left: 4px solid #818cf8;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">#${i+1} ${opt.loan.name}</div>
+                            <div class="grid-2">
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Reduciendo Plazo</div>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${formatMoney(opt.savingsTerm)}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Reduciendo Cuota</div>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">${formatMoney(opt.savingsQuota)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Excluidos
+            if (invalid.length > 0) {
+                invalid.forEach(inv => {
+                    html += `<div class="card" style="border-left: 4px solid #f59e0b; opacity: 0.8;">
+                        <div style="font-weight:600; font-size:0.9rem;">${inv.loan.name}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${inv.reason}</div>
+                    </div>`;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Cargar préstamos de prueba... o del almacenamiento local
+        function initApp() {
+            const saved = localStorage.getItem('hipotecas_loans_v2');
+            if (saved) {
+                try {
+                    loans = JSON.parse(saved);
+                } catch(e) { loans = []; }
+            }
+            if (loans.length === 0) {
+                loans = [
+                    {
+                        id: 1,
+                        name: "Piso Familiar (Ejemplo)",
+                        product: "hipoteca",
+                        startDate: "2023-01-01",
+                        amount: 160000,
+                        years: 25,
+                        rateType: "fija",
+                        rateFixed: 2.75,
+                        monthlyQuota: 738.50,
+                        totalCost: 221550,
+                        totalInterest: 61550,
+                        amortizations: []
+                    },
+                    {
+                        id: 2,
+                        name: "Préstamo Coche (Ejemplo)",
+                        product: "credito",
+                        startDate: "2023-06-01",
+                        amount: 18000,
+                        years: 6,
+                        rateType: "fija",
+                        rateFixed: 6.50,
+                        monthlyQuota: 302.40,
+                        totalCost: 21772,
+                        totalInterest: 3772,
+                        amortizations: []
+                    }
+                ];
+                saveLoansToStorage();
+            }
+            renderLoans();
+            calculateMortgage();
+        }
+
+        function saveLoansToStorage() {
+            localStorage.setItem('hipotecas_loans_v2', JSON.stringify(loans));
+        }
+        
+        function saveComparisonsToStorage() {
+            localStorage.setItem('hipotecas_comparisons_v1', JSON.stringify(comparisons));
+        }
+
+        // CONTROL DE PESTAÑAS
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            if (el) el.classList.add('active');
+
+            if (tabId === 'tab-data') renderLoans();
+            if (tabId === 'tab-compare') renderComparison();
+        }
+
+        // SELECTOR DE TIPO
+        function setRateType(type) {
+            currentRateType = type;
+            const buttons = document.querySelectorAll('#rate-type-control .segmented-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('fields-fixed').style.display = (type === 'fija') ? 'flex' : 'none';
+            document.getElementById('fields-mixed').style.display = (type === 'mixta') ? 'flex' : 'none';
+            document.getElementById('fields-variable').style.display = (type === 'variable') ? 'flex' : 'none';
+            calculateMortgage();
+        }
+
+        // MOTOR DE CÁLCULO
+        function calculateMortgage() {
+            const P = parseFloat(document.getElementById('calc-amount').value) || 0;
+            const years = parseFloat(document.getElementById('calc-years').value) || 1;
+            const n = years * 12;
+
+            let monthlyRate = 0;
+            let initialMonthly = 0;
+            let totalInterest = 0;
+
+            if (currentRateType === 'fija') {
+                const annual = parseFloat(document.getElementById('calc-interest-fixed').value) || 0;
+                monthlyRate = (annual / 100) / 12;
+                initialMonthly = calcQuota(P, monthlyRate, n);
+                totalInterest = (initialMonthly * n) - P;
+            } else if (currentRateType === 'mixta') {
+                const fixedYears = parseFloat(document.getElementById('calc-mixed-fixed-years').value) || 5;
+                const fixedRate = parseFloat(document.getElementById('calc-mixed-fixed-rate').value) || 0;
+                const diff = parseFloat(document.getElementById('calc-mixed-diff').value) || 0;
+                const eur = parseFloat(document.getElementById('calc-mixed-euribor').value) || 0;
+
+                const r1 = (fixedRate / 100) / 12;
+                const r2 = ((diff + eur) / 100) / 12;
+                const n1 = fixedYears * 12;
+                const n2 = n - n1;
+
+                initialMonthly = calcQuota(P, r1, n);
+                // Simulación saldo tras tramo fijo
+                let balance = P;
+                let intAcc = 0;
+                for (let i = 0; i < n1; i++) {
+                    const intMonth = balance * r1;
+                    const capMonth = initialMonthly - intMonth;
+                    intAcc += intMonth;
+                    balance -= capMonth;
+                }
+                const quota2 = calcQuota(balance, r2, n2);
+                for (let i = 0; i < n2; i++) {
+                    const intMonth = balance * r2;
+                    const capMonth = quota2 - intMonth;
+                    intAcc += intMonth;
+                    balance -= capMonth;
+                }
+                totalInterest = intAcc;
+            } else {
+                const rInit = (parseFloat(document.getElementById('calc-var-year1').value) || 0) / 100 / 12;
+                const diff = parseFloat(document.getElementById('calc-var-diff').value) || 0;
+                const eur = parseFloat(document.getElementById('calc-var-euribor').value) || 0;
+                const rRest = ((diff + eur) / 100) / 12;
+
+                initialMonthly = calcQuota(P, rInit, n);
+                let balance = P;
+                let intAcc = 0;
+                for (let i = 0; i < 12; i++) {
+                    const intMonth = balance * rInit;
+                    const capMonth = initialMonthly - intMonth;
+                    intAcc += intMonth;
+                    balance -= capMonth;
+                }
+                const quotaRest = calcQuota(balance, rRest, n - 12);
+                for (let i = 0; i < n - 12; i++) {
+                    const intMonth = balance * rRest;
+                    const capMonth = quotaRest - intMonth;
+                    intAcc += intMonth;
+                    balance -= capMonth;
+                }
+                totalInterest = intAcc;
+            }
+
+            const totalCost = P + totalInterest;
+
+            document.getElementById('res-monthly').innerText = formatMoney(initialMonthly) + ' /mes';
+            document.getElementById('res-total').innerText = formatMoney(totalCost);
+            document.getElementById('res-interest').innerText = formatMoney(totalInterest);
+
+            return { initialMonthly, totalCost, totalInterest };
+        }
+
+        function calcQuota(principal, rate, months) {
+            if (months <= 0) return 0;
+            if (rate === 0) return principal / months;
+            return (principal * rate * Math.pow(1 + rate, months)) / (Math.pow(1 + rate, months) - 1);
+        }
+
+        function formatMoney(num) {
+            return (num || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        }
+
+        function saveCalculatedLoan() {
+            const name = document.getElementById('calc-name').value || 'Mi Préstamo';
+            const date = document.getElementById('calc-date').value || todayStr;
+            const product = document.getElementById('calc-product').value;
+            const amount = parseFloat(document.getElementById('calc-amount').value) || 0;
+            const years = parseFloat(document.getElementById('calc-years').value) || 1;
+
+            const res = calculateMortgage();
+
+            const newLoan = {
+                id: Date.now(),
+                name,
+                startDate: date,
+                product,
+                amount,
+                years,
+                rateType: currentRateType,
+                rateFixed: parseFloat(document.getElementById('calc-interest-fixed').value) || 0,
+                feePartial: parseFloat(document.getElementById('calc-fee-partial').value) || 0,
+                feeTotal: parseFloat(document.getElementById('calc-fee-total').value) || 0,
+                monthlyQuota: res.initialMonthly,
+                totalCost: res.totalCost,
+                totalInterest: res.totalInterest,
+                initialTotalInterest: res.totalInterest,
+                amortizations: []
+            };
+
+            loans.unshift(newLoan);
+            saveLoansToStorage();
+            alert("✅ Guardado con éxito en 'Mis Datos'");
+            switchTab('tab-data', document.querySelectorAll('.nav-btn')[1]);
+        }
+
+        // RENDERIZAR PRÉSTAMOS
+        function renderLoans() {
+            const container = document.getElementById('loans-container');
+            container.innerHTML = '';
+
+            if (loans.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center; padding:30px;">
+                    <p style="color:var(--text-muted)">No tienes préstamos guardados.</p>
+                </div>`;
+                return;
+            }
+
+            loans.forEach((loan, idx) => {
+                const totalSaved = (loan.amortizations || []).reduce((acc, a) => acc + (a.savedInterest || 0), 0);
+                
+                const card = document.createElement('div');
+                card.className = 'loan-item-card';
+                card.innerHTML = `
+                    <div class="loan-item-header">
+                        <div>
+                            <span class="loan-badge ${loan.product === 'hipoteca' ? 'badge-hipoteca' : 'badge-credito'}">
+                                ${loan.product.toUpperCase()} · ${loan.rateType.toUpperCase()}
+                            </span>
+                            <h3 style="font-size:1.1rem; margin-top:4px;">${loan.name}</h3>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">Inicio: ${loan.startDate} · ${loan.years} años</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:1.15rem; font-weight:700; color:#818cf8;">${formatMoney(loan.monthlyQuota)}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">cuota mensual</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2" style="background:#111827; padding:10px; border-radius:10px;">
+                        <div>
+                            <div class="stat-label">Importe Inicial</div>
+                            <div style="font-weight:600;">${formatMoney(loan.amount)}</div>
+                        </div>
+                        <div>
+                            <div class="stat-label">Intereses Totales</div>
+                            <div style="font-weight:600; color:#f87171;">${formatMoney(loan.totalInterest)}</div>
+                        </div>
+                    </div>
+
+                    ${totalSaved > 0 ? `
+                        <div class="savings-tag">
+                            <span>💸 Ahorro por Amortizaciones:</span>
+                            <span style="font-weight:700;">+${formatMoney(totalSaved)}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="card-actions">
+                        <button class="btn btn-sm" onclick="openDetailsModal(${idx})">📊 Progreso & Cuotas</button>
+                        <button class="btn btn-sm btn-success" onclick="openAmortizeModal(${idx})">💸 Amortizar</button>
+                        <button class="btn btn-sm btn-outline" onclick="openEditModal(${idx})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteLoan(${idx})">🗑️ Borrar</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // MODAL DETALLE Y HISTÓRICO
+        function openDetailsModal(idx) {
+            activeLoanIndex = idx;
+            const loan = loans[idx];
+            document.getElementById('det-title').innerText = loan.name;
+
+            // Calcular meses pasados según fecha de inicio
+            const start = new Date(loan.startDate);
+            const now = new Date();
+            let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            if (monthsPassed < 0) monthsPassed = 0;
+            const totalMonths = loan.years * 12;
+            if (monthsPassed > totalMonths) monthsPassed = totalMonths;
+
+            const monthsLeft = totalMonths - monthsPassed;
+            const progress = (monthsPassed / totalMonths) * 100;
+
+            document.getElementById('det-start-date').innerText = `Inicio: ${loan.startDate}`;
+            document.getElementById('det-progress').style.width = `${progress}%`;
+            document.getElementById('det-months-passed').innerText = `Mes ${monthsPassed} de ${totalMonths}`;
+            document.getElementById('det-months-left').innerText = `${monthsLeft} meses pendientes`;
+
+            // Simulación mes a mes completa
+            const r = ((loan.rateFixed || 2.8) / 100) / 12;
+            let balance = loan.amount;
+            let capPaid = 0;
+            let intPaid = 0;
+            let historyList = [];
+            let futureList = [];
+
+            // Incorporar amortizaciones en la línea temporal
+            const amorts = loan.amortizations || [];
+
+            for (let m = 1; m <= totalMonths; m++) {
+                if (balance <= 0) break;
+                const mDate = new Date(start);
+                mDate.setMonth(start.getMonth() + m);
+                const dateLabel = mDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+
+                const intMonth = balance * r;
+                let capMonth = loan.monthlyQuota - intMonth;
+                if (capMonth > balance) capMonth = balance;
+                const quota = intMonth + capMonth;
+                balance -= capMonth;
+
+                if (m <= monthsPassed) {
+                    capPaid += capMonth;
+                    intPaid += intMonth;
+                    historyList.push({
+                        title: `Cuota ${m} · ${dateLabel}`,
+                        quota,
+                        cap: capMonth,
+                        interest: intMonth,
+                        rest: balance,
+                        isAmort: false
+                    });
+                } else {
+                    futureList.push({
+                        title: `Cuota ${m} · ${dateLabel}`,
+                        quota,
+                        cap: capMonth,
+                        interest: intMonth,
+                        rest: balance
+                    });
+                }
+            }
+
+            // Sumar amortizaciones al historial
+            amorts.forEach(a => {
+                capPaid += a.amount;
+                historyList.push({
+                    title: `Amortización Extraordinaria (${a.date})`,
+                    quota: a.amount,
+                    cap: a.amount,
+                    interest: 0,
+                    rest: a.newBalance,
+                    isAmort: true,
+                    saved: a.savedInterest,
+                    monthsReduced: a.monthsReduced
+                });
+            });
+
+            const capLeft = Math.max(0, loan.amount - capPaid);
+            
+            // Suma de intereses que quedan por pagar de todas las cuotas futuras
+            const intRemaining = futureList.reduce((acc, f) => acc + (f.interest || 0), 0);
+
+            // Intereses totales teóricos que costaría el crédito sin amortizar nada
+            const totalTheoreticalInterest = loan.initialTotalInterest || ((loan.monthlyQuota * totalMonths) - loan.amount);
+
+            // Intereses totales ahorrados en todas las amortizaciones
+            const totalSaved = (loan.amortizations || []).reduce((acc, a) => acc + (a.savedInterest || 0), 0);
+
+            document.getElementById('det-cap-paid').innerText = formatMoney(capPaid);
+            document.getElementById('det-cap-left').innerText = formatMoney(capLeft);
+            document.getElementById('det-int-paid').innerText = formatMoney(intPaid);
+            document.getElementById('det-int-left').innerText = formatMoney(intRemaining);
+            document.getElementById('det-int-saved').innerText = formatMoney(totalSaved);
+            document.getElementById('det-int-theor').innerText = formatMoney(totalTheoreticalInterest);
+
+            // Rellenar acordeón histórico
+            document.getElementById('acc-hist-count').innerText = historyList.length;
+            const histCont = document.getElementById('det-history-list');
+            histCont.innerHTML = historyList.map(h => `
+                <div class="receipt-row ${h.isAmort ? 'amortization' : ''}">
+                    <div class="receipt-header">
+                        <span>${h.isAmort ? '💸 ' : '📄 '}${h.title}</span>
+                        <span style="color:${h.isAmort ? '#34d399' : '#fff'}">${formatMoney(h.quota)}</span>
+                    </div>
+                    <div class="receipt-details">
+                        <span>Cap: ${formatMoney(h.cap)} · Int: ${formatMoney(h.interest)}</span>
+                        <span>Saldo: ${formatMoney(h.rest)}</span>
+                    </div>
+                    ${h.isAmort ? `<div style="font-size:0.7rem; color:#34d399;">Ahorro aportación: +${formatMoney(h.saved)}${h.monthsReduced ? ` (-${h.monthsReduced} meses)` : ''}</div>` : ''}
+                </div>
+            `).reverse().join('');
+
+            // Rellenar acordeón futuro
+            document.getElementById('acc-future-count').innerText = futureList.length;
+            const futCont = document.getElementById('det-future-list');
+            futCont.innerHTML = futureList.map(f => `
+                <div class="receipt-row">
+                    <div class="receipt-header">
+                        <span>⏳ ${f.title}</span>
+                        <span>${formatMoney(f.quota)}</span>
+                    </div>
+                    <div class="receipt-details">
+                        <span>Amortiza: ${formatMoney(f.cap)} · Int: ${formatMoney(f.interest)}</span>
+                        <span>Queda: ${formatMoney(f.rest)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-details').classList.add('open');
+        }
+
+        // ACORDEÓN TOGGLE
+        function toggleAccordion(id) {
+            document.getElementById(id).classList.toggle('open');
+        }
+
+        // MODAL AMORTIZAR
+        function openAmortizeModal(idx) {
+            activeLoanIndex = idx;
+            const loan = loans[idx];
+            
+            // Estimar saldo actual
+            const start = new Date(loan.startDate);
+            const now = new Date();
+            let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            if (monthsPassed < 0) monthsPassed = 0;
+
+            const r = ((loan.rateFixed || 2.8) / 100) / 12;
+            let bal = loan.amount;
+            for(let i=0; i<monthsPassed; i++) {
+                const intM = bal * r;
+                const capM = loan.monthlyQuota - intM;
+                bal -= capM;
+            }
+            (loan.amortizations || []).forEach(a => bal -= a.amount);
+            bal = Math.max(0, bal);
+
+            document.getElementById('amort-current-capital').innerText = formatMoney(bal);
+            document.getElementById('modal-amortize').classList.add('open');
+            previewAmortization();
+        }
+
+        function setAmortStrategy(strat) {
+            currentAmortStrategy = strat;
+            document.getElementById('btn-strat-term').classList.toggle('active', strat === 'term');
+            document.getElementById('btn-strat-quota').classList.toggle('active', strat === 'quota');
+            previewAmortization();
+        }
+
+        function getActualLoanState(loan) {
+            const start = new Date(loan.startDate);
+            const now = new Date();
+            let monthsPassed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            if (monthsPassed < 0) monthsPassed = 0;
+            
+            const r = ((loan.rateFixed || 2.8) / 100) / 12;
+            let balance = loan.amount;
+            let quota = loan.monthlyQuota;
+            let originalTotalMonths = loan.years * 12;
+            
+            // Simular pasado
+            let amorts = [...(loan.amortizations || [])].map(a => {
+                const aDate = new Date(a.date);
+                let m = (aDate.getFullYear() - start.getFullYear()) * 12 + (aDate.getMonth() - start.getMonth());
+                return { ...a, m: Math.max(0, m) };
+            });
+            
+            for (let m = 1; m <= monthsPassed; m++) {
+                if (balance <= 0) break;
+                
+                let monthAmorts = amorts.filter(a => a.m === m - 1);
+                monthAmorts.forEach(a => {
+                    balance = Math.max(0, balance - a.amount);
+                    if (a.strategy === 'quota' && balance > 0) {
+                        let rem = originalTotalMonths - (m - 1);
+                        quota = calcQuota(balance, r, rem);
+                    }
+                });
+                
+                if (balance <= 0) break;
+                const intM = balance * r;
+                let capM = quota - intM;
+                if (capM > balance) capM = balance;
+                balance -= capM;
+            }
+            
+            // Amortizaciones de este mismo mes o futuras
+            let currentAmorts = amorts.filter(a => a.m >= monthsPassed);
+            currentAmorts.forEach(a => {
+                 balance = Math.max(0, balance - a.amount);
+                 if (a.strategy === 'quota' && balance > 0) {
+                      let rem = originalTotalMonths - monthsPassed;
+                      quota = calcQuota(balance, r, rem);
+                 }
+            });
+            
+            // Proyección actual sin la NUEVA amortización que estamos simulando
+            let tempBal = balance;
+            let remainingInt = 0;
+            let remainingMonths = 0;
+            while(tempBal > 0.01 && remainingMonths < 1200) {
+                const intM = tempBal * r;
+                let capM = quota - intM;
+                if (capM <= 0) { capM = tempBal; }
+                if (capM > tempBal) capM = tempBal;
+                remainingInt += intM;
+                tempBal -= capM;
+                remainingMonths++;
+            }
+            
+            return { balance, quota, remainingMonths, remainingInt, r, monthsPassed };
+        }
+
+        function previewAmortization() {
+            if (activeLoanIndex === null) return;
+            const loan = loans[activeLoanIndex];
+            const amortAmount = parseFloat(document.getElementById('amort-amount').value) || 0;
+
+            const state = getActualLoanState(loan);
+            
+            // Proyección con la NUEVA amortización
+            let newBal = Math.max(0, state.balance - amortAmount);
+            let newInt = 0;
+            let newRemainingMonths = 0;
+
+            if (currentAmortStrategy === 'term') {
+                let tempBal = newBal;
+                while (tempBal > 0.01 && newRemainingMonths < 1200) {
+                    const intM = tempBal * state.r;
+                    let capM = state.quota - intM;
+                    if (capM <= 0) { capM = tempBal; }
+                    if (capM > tempBal) capM = tempBal;
+                    newInt += intM;
+                    tempBal -= capM;
+                    newRemainingMonths++;
+                }
+            } else {
+                let newQuota = calcQuota(newBal, state.r, state.remainingMonths);
+                newInt = (newQuota * state.remainingMonths) - newBal;
+                newRemainingMonths = state.remainingMonths;
+            }
+
+            const saved = Math.max(0, state.remainingInt - newInt);
+            const monthsReduced = Math.max(0, state.remainingMonths - newRemainingMonths);
+
+            document.getElementById('amort-int-old').innerText = formatMoney(state.remainingInt);
+            document.getElementById('amort-int-new').innerText = formatMoney(newInt);
+            
+            // Si es por plazo, mostrar también cuántos meses bajamos
+            let savedText = formatMoney(saved);
+            if (currentAmortStrategy === 'term' && monthsReduced > 0) {
+                savedText += ` (-${monthsReduced} meses)`;
+            }
+            document.getElementById('amort-int-saved').innerText = savedText;
+        }
+
+        function applyAmortization() {
+            if (activeLoanIndex === null) return;
+            const loan = loans[activeLoanIndex];
+            const amount = parseFloat(document.getElementById('amort-amount').value) || 0;
+            const date = document.getElementById('amort-date').value || todayStr;
+
+            if (amount <= 0) {
+                alert("Introduce una cantidad válida.");
+                return;
+            }
+
+            const state = getActualLoanState(loan);
+            
+            let newBal = Math.max(0, state.balance - amount);
+            let newInt = 0;
+            let newRemainingMonths = 0;
+
+            if (currentAmortStrategy === 'term') {
+                let tempBal = newBal;
+                while (tempBal > 0.01 && newRemainingMonths < 1200) {
+                    const intM = tempBal * state.r;
+                    let capM = state.quota - intM;
+                    if (capM <= 0) { capM = tempBal; }
+                    if (capM > tempBal) capM = tempBal;
+                    newInt += intM;
+                    tempBal -= capM;
+                    newRemainingMonths++;
+                }
+            } else {
+                let newQuota = calcQuota(newBal, state.r, state.remainingMonths);
+                newInt = (newQuota * state.remainingMonths) - newBal;
+                newRemainingMonths = state.remainingMonths;
+            }
+            
+            const savedInterest = Math.max(0, state.remainingInt - newInt);
+            const monthsReduced = Math.max(0, state.remainingMonths - newRemainingMonths);
+
+            if (!loan.amortizations) loan.amortizations = [];
+
+            loan.amortizations.push({
+                date,
+                amount,
+                strategy: currentAmortStrategy,
+                savedInterest,
+                monthsReduced,
+                newBalance: newBal
+            });
+
+            // Restar el ahorro total general (para la pantalla de inicio)
+            loan.totalInterest = Math.max(0, loan.totalInterest - savedInterest);
+            loan.totalCost = loan.amount + loan.totalInterest;
+
+            saveLoansToStorage();
+            closeModal('modal-amortize');
+            renderLoans();
+            alert(`🎉 ¡Amortización aplicada con éxito!\nHas ahorrado ${formatMoney(savedInterest)} en intereses de esta aportación` + (monthsReduced > 0 ? ` y reducido ${monthsReduced} meses.` : '.'));
+        }
+
+        // MODAL EDICIÓN
+        function openEditModal(idx) {
+            activeLoanIndex = idx;
+            const loan = loans[idx];
+            document.getElementById('edit-name').value = loan.name;
+            document.getElementById('edit-date').value = loan.startDate;
+            document.getElementById('edit-product').value = loan.product;
+            document.getElementById('edit-amount').value = loan.amount;
+            document.getElementById('edit-years').value = loan.years;
+            document.getElementById('modal-edit').classList.add('open');
+        }
+
+        function saveEditedLoan() {
+            if (activeLoanIndex === null) return;
+            const loan = loans[activeLoanIndex];
+            loan.name = document.getElementById('edit-name').value;
+            loan.startDate = document.getElementById('edit-date').value;
+            loan.product = document.getElementById('edit-product').value;
+            loan.amount = parseFloat(document.getElementById('edit-amount').value) || loan.amount;
+            loan.years = parseFloat(document.getElementById('edit-years').value) || loan.years;
+
+            const n = loan.years * 12;
+            const r = ((loan.rateFixed || 2.8) / 100) / 12;
+            loan.monthlyQuota = calcQuota(loan.amount, r, n);
+            loan.totalInterest = (loan.monthlyQuota * n) - loan.amount;
+            loan.totalCost = loan.amount + loan.totalInterest;
+
+            saveLoansToStorage();
+            closeModal('modal-edit');
+            renderLoans();
+        }
+
+        function deleteLoan(idx) {
+            if (confirm(`¿Estás seguro de que deseas eliminar "${loans[idx].name}"?`)) {
+                loans.splice(idx, 1);
+                saveLoansToStorage();
+                renderLoans();
+            }
+        }
+
+        // COMPARADOR
+                function renderComparison() {
+            const container = document.getElementById('compare-container');
+            container.innerHTML = '';
+
+            if (comparisons.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding: 20px;">No tienes simulaciones en el comparador. Ve a la calculadora y usa "⚖️ Comparar".</p>`;
+                return;
+            }
+
+            let html = `<div style="display:flex; justify-content:flex-end; margin-bottom: 12px;">
+                <button class="btn-sm" style="background:transparent; border:1px solid #ef4444; color:#f87171;" onclick="clearComparisons()">🗑️ Limpiar Comparador</button>
+            </div>`;
+
+            if (comparisons.length < 2) {
+                html += `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding: 10px;">Añade al menos otra simulación desde la calculadora para ver la comparativa de la mejor opción.</p>`;
+            }
+
+            const sorted = [...comparisons].sort((a,b) => a.totalInterest - b.totalInterest);
+            const best = sorted[0];
+
+            if (comparisons.length >= 2) {
+                html += `
+                    <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1)); border: 1px solid #10b981; margin-bottom: 16px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; right: 0; background: #10b981; color: white; padding: 4px 12px; font-size: 0.7rem; font-weight: 700; border-bottom-left-radius: 12px;">🏆 MEJOR OPCIÓN</div>
+                        <div style="font-weight:700; color:#34d399; font-size: 1.1rem; margin-top: 10px; margin-bottom: 4px;">${best.name}</div>
+                        <div style="font-size:0.8rem; color:#a7f3d0;">
+                            Es la alternativa ideal porque te ahorra dinero: es la que menos intereses totales genera a lo largo del préstamo (${formatMoney(best.totalInterest)}).
+                        </div>
+                    </div>
+                `;
+            }
+
+            sorted.forEach((l, i) => {
+                const diff = l.totalInterest - best.totalInterest;
+                const totalPagos = l.years * 12;
+                
+                html += `
+                    <div class="card" style="display:flex; flex-direction:column; gap: 8px; margin-bottom: 10px; border-left: 4px solid ${diff === 0 && comparisons.length >= 2 ? '#10b981' : '#818cf8'};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="font-weight:600; font-size:1rem; color:#e0e7ff;">#${i+1} ${l.name}</div>
+                            <button onclick="deleteComparison(${l.id})" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.8rem; color:var(--text-muted); gap:6px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px;">
+                            <div>
+                                <div style="font-size:0.7rem;">Capital Total</div>
+                                <div style="color:#fff; font-weight:500;">${formatMoney(l.amount)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Nº de Pagos</div>
+                                <div style="color:#fff; font-weight:500;">${totalPagos} meses</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Cuota Mensual</div>
+                                <div style="color:#fff; font-weight:500;">${formatMoney(l.monthlyQuota)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:0.7rem;">Intereses a Pagar</div>
+                                <div style="color:#f87171; font-weight:600;">${formatMoney(l.totalInterest)}</div>
+                            </div>
+                        </div>
+                        
+                        ${comparisons.length >= 2 ? 
+                            (diff > 0 
+                                ? `<div style="font-size:0.75rem; color:#f87171; font-weight: 500;">⚠️ Te cuesta +${formatMoney(diff)} en intereses comparado con la mejor opción.</div>` 
+                                : `<div style="font-size:0.75rem; color:#34d399; font-weight: 600;">✨ ¡Esta es tu opción más barata!</div>`
+                            ) 
+                            : ''
+                        }
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function clearComparisons() {
+            comparisons = [];
+            saveComparisonsToStorage();
+            renderComparison();
+        }
+
+        function deleteComparison(id) {
+            comparisons = comparisons.filter(c => c.id !== id);
+            saveComparisonsToStorage();
+            renderComparison();
+        }
+
+        function saveForComparison() {
+            const name = document.getElementById('calc-name').value || 'Mi Préstamo';
+            const date = document.getElementById('calc-date').value || todayStr;
+            const product = document.getElementById('calc-product').value;
+            const amount = parseFloat(document.getElementById('calc-amount').value) || 0;
+            const years = parseFloat(document.getElementById('calc-years').value) || 1;
+
+            const res = calculateMortgage();
+
+            const newComp = {
+                id: Date.now(),
+                name,
+                startDate: date,
+                product,
+                amount,
+                years,
+                rateType: currentRateType,
+                rateFixed: parseFloat(document.getElementById('calc-interest-fixed').value) || 0,
+                feePartial: parseFloat(document.getElementById('calc-fee-partial').value) || 0,
+                feeTotal: parseFloat(document.getElementById('calc-fee-total').value) || 0,
+                monthlyQuota: res.initialMonthly,
+                totalCost: res.totalCost,
+                totalInterest: res.totalInterest,
+                initialTotalInterest: res.totalInterest,
+                amortizations: []
+            };
+
+            comparisons.push(newComp);
+            saveComparisonsToStorage();
+            
+            // Animación de éxito o aviso
+            alert("⚖️ Añadido al Comparador con éxito.");
+            
+            // Si el usuario quiere ver el comparador, cambiamos de pestaña:
+            switchTab('tab-compare', document.querySelectorAll('.nav-btn')[2]);
+        }
+
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        // Iniciar al cargar
+        window.onload = initApp;
+    </script>
+</body>
+</html>
